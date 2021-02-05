@@ -7,9 +7,11 @@
         <code v-text="'<el-button>'"></code>
         below
       </p>
-      <el-button>el-button</el-button>
+      <el-button @click="langSwitch">el-button</el-button>
     </div>
     <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <p>{{ $t("test") }}</p>
+    <el-input type="textarea" :rows="20" :placeholder="testText()"> </el-input>
   </div>
 </template>
 
@@ -20,6 +22,18 @@ export default {
   name: 'app',
   components: {
     HelloWorld
+  },
+  methods: {
+    testText() {
+      return this.$i18n.t("test");
+    },
+    langSwitch() {
+      if (this.$i18n.locale === "zh_CN") {
+        this.$i18n.locale = "en_US";
+      } else {
+        this.$i18n.locale = "zh_CN";
+      }
+    }
   }
 }
 </script>
