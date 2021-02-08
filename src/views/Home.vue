@@ -24,7 +24,7 @@
         <span slot="title">{{ $t("label.change_password") }}</span>
       </el-menu-item>
       <el-menu-item index="google_auth_manager">
-        <i class="el-icon-s-grid"></i>
+        <i class="el-icon-mobile"></i>
         <span slot="title">{{ $t("label.google_auth") }}</span>
       </el-menu-item>
       <el-menu-item index="um">

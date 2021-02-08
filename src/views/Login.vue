@@ -81,6 +81,7 @@
       <el-form v-else>
         <el-form-item>
           <el-alert :title="$store.getters.user.nickName" type="success">
+            <el-button type="primary" @click="logout()">{{$t("label.logout")}}</el-button>
           </el-alert>
         </el-form-item>
       </el-form>
@@ -91,6 +92,7 @@
 <script>
 import GoogleAuthSetup from "../components/GoogleAuthSetup";
 import types from "../store/mutation-types";
+import store from "../store";
 export default {
   data() {
     const validateUsername = (rule, value, callback) => {
@@ -250,6 +252,9 @@ export default {
           });
         }
       }
+    },
+    logout() {
+      store.dispatch("Logout4SSO")
     }
   }
 };

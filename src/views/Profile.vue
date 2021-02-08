@@ -167,7 +167,7 @@ export default {
           .then(fileUrl => {
             this.apiUpdateDetailInfoRequest({ avatar: fileUrl })
               .then(() => {
-                this.$message.success(this.$t("tips.label.operation_success"));
+                this.$message.success(this.$t("tips.tips.operation_success"));
                 this.cover = encodeURI(
                   process.env.VUE_APP_IMAGE_DOWNLOAD_BASE_URL + "/" + fileUrl
                 );

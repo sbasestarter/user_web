@@ -17,7 +17,11 @@ import {
   GetDetailInfoRequest,
   UpdateDetailInfoRequest,
   GetCsrfTokenRequest,
-  ChangePasswordRequest
+  ChangePasswordRequest,
+  GetUserListRequest,
+  ManagerUserRequest,
+  ManagerUserType,
+  ManagerUserResetPasswordRequest
 } from "../../proto/user/user_grpc_web_pb";
 
 import {
@@ -484,6 +488,70 @@ export default {
       } else {
         return uri + separator + key + "=" + value;
       }
+    };
+    Vue.prototype.apiGetUserList = function (offset, pageSize) {
+      return new Promise((resolve, reject) => {
+        try {
+          Vue.prototype.apiGetCsrfToken().then(csrfToken => {
+            const req = new GetUserListRequest();
+            req.setCsrfToken(csrfToken);
+            req.setOffset(offset);
+            req.setLimit(pageSize);
+            Vue.prototype.client.getUserList(req, {}, (err, resp) => {
+              if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+                return
+              }
+              resolve({ 'cnt': resp.getCnt(), 'users': resp.getUsersList()});
+            })
+          }).catch(err => {
+            reject(err);
+          })
+        } catch (err) {
+          reject(err);
+        }
+      })
+    };
+    Vue.prototype.__managerUser = function (userID, mType, resetPasswordPayload) {
+      return new Promise((resolve, reject) => {
+        try {
+          Vue.prototype.apiGetCsrfToken().then(csrfToken => {
+            const req = new ManagerUserRequest();
+            req.setCsrfToken(csrfToken);
+            req.setUid(userID);
+            req.setType(mType);
+            if (resetPasswordPayload !== undefined && resetPasswordPayload != null) {
+              req.setResetPassword(resetPasswordPayload);
+            }
+            Vue.prototype.client.managerUser(req, {}, (err, resp) => {
+              if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+                return
+              }
+              resolve()
+            })
+          }).catch(err => {
+            reject(err);
+          })
+        } catch (err) {
+          reject(err);
+        }
+      })
+    };
+    Vue.prototype.apiSetUserAdmin = function (userID) {
+      return Vue.prototype.__managerUser(userID, ManagerUserType.MUTSETADMINPRIVILEGE)
+    };
+    Vue.prototype.apiUnsetUserAdmin = function (userID) {
+      return Vue.prototype.__managerUser(userID, ManagerUserType.MUTUNSETADMINPRIVILEGE)
+    };
+    Vue.prototype.apiSwitchUserAdminPrivileges = function (userID) {
+      return Vue.prototype.__managerUser(userID, ManagerUserType.MUTSWITCHADMINPRIVILEGE)
+    };
+    Vue.prototype.apiDeleteUser = function (userID) {
+      return Vue.prototype.__managerUser(userID, ManagerUserType.MUTDELETE)
+    };
+    Vue.prototype.apiResetUserPassword = function (userID, newPassword) {
+      const resetPasswordRequest = new ManagerUserResetPasswordRequest();
+      resetPasswordRequest.setNewPassword(newPassword);
+      return Vue.prototype.__managerUser(userID, ManagerUserType.MUTRESETPASSWORD, resetPasswordRequest)
     };
   }
 };

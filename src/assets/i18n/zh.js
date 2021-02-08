@@ -2,6 +2,7 @@ module.exports = {
   lang: "中文",
   test: "测试语言",
   label: {
+    id: "ID",
     yes: "是",
     no: "否",
     change: "修改",
@@ -18,6 +19,7 @@ module.exports = {
     has_account: "我已有账号",
     no_account: "我还没账号",
     login: "登录",
+    logout: "登出",
     register: "注册",
     reset_password: "重置密码",
     submit: "提交",
@@ -44,7 +46,13 @@ module.exports = {
     we_chat: "微信",
     ui_waiting: "请稍候 。。。",
     return: "返回",
-    confirm: "确定"
+    confirm: "确定",
+    last_login_at: "上次登录于",
+    admin_flag: "是否管理员",
+    privilege_change: "管理员",
+    set_to_admin: "设置为管理员",
+    unset_to_admin: "设置为普通用户",
+    delete_user: "删除用户"
   },
   hint: {
     user_name: "请输入手机号码或邮箱",
@@ -69,6 +77,8 @@ module.exports = {
     register_success: "注册成功",
     verify_code_input: "请输入校验码",
     google_auth_clean_success: "取消谷歌二次验证成功",
-    google_auth_set_success: "设置谷歌二次验证成功"
+    google_auth_set_success: "设置谷歌二次验证成功",
+    delete_user_success: "成功删除用户",
+    reset_password_success: "重置密码成功"
   }
 };
