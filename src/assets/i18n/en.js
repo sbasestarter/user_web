@@ -52,7 +52,8 @@ module.exports = {
     privilege_change: "admin",
     set_to_admin: "set to admin",
     unset_to_admin: "set to user",
-    delete_user: "delete user"
+    delete_user: "delete user",
+    privileges: "privileges"
   },
   hint: {
     user_name: "input your phone or email",

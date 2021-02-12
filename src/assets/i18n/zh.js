@@ -52,7 +52,8 @@ module.exports = {
     privilege_change: "管理员",
     set_to_admin: "设置为管理员",
     unset_to_admin: "设置为普通用户",
-    delete_user: "删除用户"
+    delete_user: "删除用户",
+    privileges: "权限控制"
   },
   hint: {
     user_name: "请输入手机号码或邮箱",

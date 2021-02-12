@@ -37,7 +37,7 @@
             </el-dropdown>
           </template>
         </el-table-column>
-        <el-table-column prop="privileges" label="privileges"></el-table-column>
+        <el-table-column prop="privileges" :label="$t('label.privileges')"></el-table-column>
       </el-table>
       <div class="block">
         <el-pagination
