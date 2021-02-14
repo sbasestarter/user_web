@@ -127,7 +127,7 @@ export default {
                 message: this.$t("tips.google_auth_clean_success"),
                 type: "success"
               });
-              store.dispatch("GetAndCheckToken", { ssoFlag: false });
+              store.dispatch("GetAndCheckToken", { });
             })
             .catch(err => {
               this.$message({
@@ -149,7 +149,7 @@ export default {
         type: "success"
       });
       this.setupDialogVisible = false;
-      store.dispatch("GetAndCheckToken", { ssoFlag: false });
+      store.dispatch("GetAndCheckToken", { });
     }
   }
 };

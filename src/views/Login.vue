@@ -159,16 +159,11 @@ export default {
     },
     submitForm(formName) {
       this.$refs[formName].validate(valid => {
-        let ssoFlag = false;
         const sso = this.$route.query.sso || "";
-        if (sso !== "") {
-          ssoFlag = true;
-        }
         if (valid) {
           this.apiLogin(
             this.loginForm.userName,
-            this.loginForm.pass,
-            ssoFlag,
+            this.loginForm.pass, sso,
             this.loginForm.codeForVe,
             this.loginForm.codeForGa
           )

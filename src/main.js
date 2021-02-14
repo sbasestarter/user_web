@@ -11,6 +11,7 @@ Vue.config.productionTip = false;
 Vue.use(apis);
 
 router.beforeEach((to, from, next) => {
+  store.dispatch("GetAndCheckToken", { });
   if (to.path === "/sso") {
     next();
     // eslint-disable-next-line no-prototype-builtins
@@ -39,7 +40,7 @@ router.beforeEach((to, from, next) => {
             });
       } else {
         store
-            .dispatch("GetAndCheckToken", { ssoFlag: true })
+            .dispatch("GetAndCheckToken", { ssoJumpUrl: to.query["url"] })
             .then(ssoToken => {
               if (ssoToken !== "") {
                 window.location.replace(

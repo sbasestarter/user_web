@@ -168,16 +168,11 @@ export default {
     submitForm(formName) {
       this.$refs[formName].validate(valid => {
         if (valid) {
-          let ssoFlag = false;
           const sso = this.$route.query.sso || "";
-          if (sso !== "") {
-            ssoFlag = true;
-          }
           this.apiRegister(
             this.registerForm.userName,
             this.registerForm.pass,
-            this.registerForm.verifyCode,
-            ssoFlag
+            this.registerForm.verifyCode, sso
           )
             .then(resp => {
               if (resp.code === 0) {

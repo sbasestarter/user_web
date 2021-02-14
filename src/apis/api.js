@@ -186,7 +186,7 @@ export default {
       username,
       password,
       verifyCode,
-      ssoFlag
+      ssoJumpURL
     ) {
       return new Promise((resolve, reject) => {
         try {
@@ -197,8 +197,9 @@ export default {
           req.setUser(userId);
           req.setCodeForVe(verifyCode);
           req.setNewPassword(password);
-          if (ssoFlag !== undefined) {
-            req.setAttachSsoToken(ssoFlag);
+          if (ssoJumpURL !== undefined && ssoJumpURL !== "") {
+            req.setAttachSsoToken(true);
+            req.setSsoJumpUrl(ssoJumpURL);
           }
           Vue.prototype.client.register(req, {}, (err, resp) => {
             Vue.prototype.__processGrpcWithGoogleAuthFlagResp(
@@ -231,7 +232,7 @@ export default {
     Vue.prototype.apiLogin = function(
       username,
       password,
-      ssoFlag,
+      ssoJumpURL,
       codeForVe,
       codeForGa
     ) {
@@ -243,8 +244,9 @@ export default {
           const req = new LoginRequest();
           req.setUser(userId);
           req.setPassword(password);
-          if (ssoFlag) {
-            req.setAttachSsoToken(ssoFlag);
+          if (ssoJumpURL !== undefined && ssoJumpURL !== "") {
+            req.setAttachSsoToken(true);
+            req.setSsoJumpUrl(ssoJumpURL);
           }
           if (codeForVe !== undefined) {
             req.setCodeForVe(codeForVe);
@@ -280,12 +282,13 @@ export default {
         }
       });
     };
-    Vue.prototype.apiProfile = function(ssoFlag) {
+    Vue.prototype.apiProfile = function(ssoJumpUrl) {
       return new Promise((resolve, reject) => {
         try {
           const req = new ProfileRequest();
-          if (ssoFlag) {
-            req.setAttachSsoToken(ssoFlag);
+          if (ssoJumpUrl !== undefined && ssoJumpUrl !== "") {
+            req.setAttachSsoToken(true);
+            req.setSsoJumpUrl(ssoJumpUrl);
           }
           Vue.prototype.client.profile(req, {}, (err, resp) => {
             const r = Vue.prototype.__checkUserGRPCResultForProfile(
@@ -296,10 +299,14 @@ export default {
             if (r === -1) {
               return;
             }
+            let userInfo = {};
+            if (resp.getInfo() !== undefined) {
+              userInfo = resp.getInfo().toObject();
+            }
             resolve({
               ssoToken: resp.getSsoToken(),
               result: r,
-              user: resp.getInfo().toObject()
+              user: userInfo
             });
           });
         } catch (err) {

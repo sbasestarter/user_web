@@ -105,10 +105,10 @@ const actions = {
         });
     });
   },
-  GetAndCheckToken({ commit }, { ssoFlag = false }) {
+  GetAndCheckToken({ commit }, { ssoJumpUrl = "" }) {
     return new Promise((resolve, reject) => {
       Vue.prototype
-        .apiProfile(ssoFlag)
+        .apiProfile(ssoJumpUrl)
         .then(resp => {
           if (resp.result !== 0) {
             commit(types.RECEIVE_LOGOUT_SUCCESS);
