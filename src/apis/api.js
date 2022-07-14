@@ -1,6 +1,5 @@
 import {
   GoogleAuthGlobalFlag,
-  UserServiceClient,
   UserId,
   VerificationEquipment,
   TriggerAuthRequest,
@@ -22,13 +21,15 @@ import {
   ManagerUserRequest,
   ManagerUserType,
   ManagerUserResetPasswordRequest
-} from "../../proto/user/user_grpc_web_pb";
+} from "../../proto/user/user_pb";
+
+import { UserServiceClient } from "../../proto/user/user_grpc_web_pb";
 
 import {
-  FileCenterClient,
   UpdateFileRequest,
-  FileCenterStatus
-} from "../../proto/file-center/file-center_grpc_web_pb";
+} from "../../proto/file/file_pb";
+
+import { FileServiceClient } from "../../proto/file/file_grpc_web_pb"
 
 import moment from "moment";
 
@@ -47,16 +48,17 @@ export default {
 
     Vue.prototype.enabledGlobalGa = function(flag) {
       return (
-        flag === GoogleAuthGlobalFlag.GOOGLEAUTHFLAGENABLED ||
-        flag === GoogleAuthGlobalFlag.GOOGLEAUTHFLAGENABLEDFORCE
+        flag === GoogleAuthGlobalFlag.GOOGLE_AUTH_GLOBAL_FLAG_ENABLED ||
+        flag === GoogleAuthGlobalFlag.GOOGLE_AUTH_GLOBAL_FLAG_ENABLED_FORCE
       );
     };
+
     Vue.prototype.forceEnabledGlobalGa = function(flag) {
-      return flag === GoogleAuthGlobalFlag.GOOGLEAUTHFLAGENABLEDFORCE;
+      return flag === GoogleAuthGlobalFlag.GOOGLE_AUTH_GLOBAL_FLAG_ENABLED_FORCE;
     };
 
-    Vue.prototype.fileClient = new FileCenterClient(
-      process.env.VUE_APP_BASE_URL,
+    Vue.prototype.fileClient = new FileServiceClient(
+      process.env.VUE_APP_BASE_UPLOAD_URL,
       null,
       {
         withCredentials: true
@@ -69,10 +71,6 @@ export default {
         return false;
       }
 
-      if (resp.getStatus().getFileStatus() !== FileCenterStatus.FILE__SUCCESS) {
-        reject(new Error(resp.getStatus().getMsg()));
-        return false;
-      }
       return true;
     };
 
@@ -85,6 +83,7 @@ export default {
             if (!Vue.prototype.__checkFileStatus(err, resp, reject)) {
               return;
             }
+
             resolve(resp.getFileUrl());
           });
         } catch (err) {
@@ -100,17 +99,21 @@ export default {
         withCredentials: true
       }
     );
-    Vue.prototype.__checkGrpcResp = function(err, resp, reject) {
+
+    Vue.prototype.__checkGRPCResp = function(err, resp, reject) {
       if (err != null) {
         reject(new Error(JSON.stringify(err)));
         return false;
       }
-      if (resp.getStatus().getStatus() !== UserStatus.US_SUCCESS) {
+
+      if (resp.getStatus().getStatus() !== UserStatus.USER_STATUS_SUCCESS) {
         reject(new Error(resp.getStatus().getMsg()));
         return false;
       }
+
       return true;
     };
+
     Vue.prototype.__checkUserGRPCResultForProfile = function(
       err,
       resp,
@@ -121,11 +124,13 @@ export default {
         return -1;
       }
 
-      if (resp.getStatus().getStatus() !== UserStatus.US_SUCCESS) {
+      if (resp.getStatus().getStatus() !== UserStatus.USER_STATUS_SUCCESS) {
         return 1;
       }
+
       return 0;
     };
+
     Vue.prototype.__processGrpcWithGoogleAuthFlagResp = function(
       err,
       resp,
@@ -134,45 +139,55 @@ export default {
     ) {
       if (err != null) {
         reject(new Error(JSON.stringify(err)));
-        return;
+        return false;
       }
-      if (resp.getStatus().getStatus() === UserStatus.US_SUCCESS) {
+
+      if (resp.getStatus().getStatus() === UserStatus.USER_STATUS_SUCCESS) {
         resolve({
           code: 0,
           user: resp.getInfo().toObject(),
           ssoToken: resp.getSsoToken()
         });
-        return;
+        return true;
       }
-      if (resp.getStatus().getStatus() === UserStatus.US_NEED_2FA_SETUP) {
+
+      if (resp.getStatus().getStatus() === UserStatus.USER_STATUS_NEED_2FA_SETUP) {
         resolve({
           code: 1,
           user: resp.getInfo().toObject(),
           ssoToken: resp.getSsoToken()
         });
-        return;
+        return false;
       }
-      if (resp.getStatus().getStatus() === UserStatus.US_NEED_2FA_AUTH) {
+
+      if (resp.getStatus().getStatus() === UserStatus.USER_STATUS_NEED_2FA_AUTH) {
         resolve({ code: 2, user: null });
-        return;
+        return false;
       }
-      if (resp.getStatus().getStatus() === UserStatus.US_NEED_VE_AUTH) {
+
+      if (resp.getStatus().getStatus() === UserStatus.USER_STATUS_NEED_VE_AUTH) {
         resolve({ code: 3, user: null });
-        return;
+        return false;
       }
+
       reject(new Error(resp.getStatus().getMsg()));
+
+      return false
     };
+
     Vue.prototype.apiSendVerifyCode = function(username) {
       return new Promise((resolve, reject) => {
         try {
           const userId = new UserId();
           userId.setUserName(username);
-          userId.setUserVe(VerificationEquipment.VEAUTO.toString());
+          userId.setUserVe(VerificationEquipment.VERIFICATION_EQUIPMENT_UNSPECIFIED.toString());
+
           const req = new TriggerAuthRequest();
           req.setUser(userId);
-          req.setPurpose(TriggerAuthPurpose.TRIGGERAUTHPURPOSEREGISTER);
+          req.setPurpose(TriggerAuthPurpose.TRIGGER_AUTH_PURPOSE_REGISTER);
+
           Vue.prototype.client.triggerAuth(req, {}, (err, resp) => {
-            if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+            if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
               return;
             }
             resolve();
@@ -182,6 +197,7 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiRegister = function(
       username,
       password,
@@ -192,7 +208,8 @@ export default {
         try {
           const userId = new UserId();
           userId.setUserName(username);
-          userId.setUserVe(VerificationEquipment.VEAUTO.toString());
+          userId.setUserVe(VerificationEquipment.VERIFICATION_EQUIPMENT_UNSPECIFIED.toString());
+
           const req = new RegisterRequest();
           req.setUser(userId);
           req.setCodeForVe(verifyCode);
@@ -201,6 +218,7 @@ export default {
             req.setAttachSsoToken(true);
             req.setSsoJumpUrl(ssoJumpURL);
           }
+
           Vue.prototype.client.register(req, {}, (err, resp) => {
             Vue.prototype.__processGrpcWithGoogleAuthFlagResp(
               err,
@@ -214,12 +232,13 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiGoogleAuthGetSetupInfo = function() {
       return new Promise((resolve, reject) => {
         try {
           const req = new GoogleAuthGetSetupInfoRequest();
           Vue.prototype.client.googleAuthGetSetupInfo(req, {}, (err, resp) => {
-            if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+            if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
               return;
             }
             resolve(resp.getSecretKey());
@@ -229,6 +248,7 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiLogin = function(
       username,
       password,
@@ -240,7 +260,7 @@ export default {
         try {
           const userId = new UserId();
           userId.setUserName(username);
-          userId.setUserVe(VerificationEquipment.VEAUTO.toString());
+          userId.setUserVe(VerificationEquipment.VERIFICATION_EQUIPMENT_UNSPECIFIED.toString());
           const req = new LoginRequest();
           req.setUser(userId);
           req.setPassword(password);
@@ -267,12 +287,13 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiLogout = function() {
       return new Promise((resolve, reject) => {
         try {
           const req = new LogoutRequest();
           Vue.prototype.client.logout(req, {}, (err, resp) => {
-            if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+            if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
               return;
             }
             resolve();
@@ -282,6 +303,7 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiProfile = function(ssoJumpUrl) {
       return new Promise((resolve, reject) => {
         try {
@@ -314,13 +336,14 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiGoogleAuthVerify = function(code) {
       return new Promise((resolve, reject) => {
         try {
           const req = new GoogleAuthVerifyRequest();
           req.setCode(code);
           Vue.prototype.client.googleAuthVerify(req, {}, (err, resp) => {
-            if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+            if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
               return;
             }
             resolve(resp.getToken());
@@ -330,6 +353,7 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiGoogleAuthSet = function(code, oldToken) {
       return new Promise((resolve, reject) => {
         try {
@@ -339,7 +363,7 @@ export default {
             req.setTokenGaOld(oldToken);
           }
           Vue.prototype.client.googleAuthSet(req, {}, (err, resp) => {
-            if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+            if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
               return;
             }
             resolve();
@@ -349,6 +373,7 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiResetPassword = function(
       username,
       password,
@@ -359,7 +384,7 @@ export default {
         try {
           const userId = new UserId();
           userId.setUserName(username);
-          userId.setUserVe(VerificationEquipment.VEAUTO.toString());
+          userId.setUserVe(VerificationEquipment.VERIFICATION_EQUIPMENT_UNSPECIFIED.toString());
           const req = new ResetPasswordRequest();
           req.setUser(userId);
           req.setNewPassword(password);
@@ -385,12 +410,13 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiGetDetailInfo = function() {
       return new Promise((resolve, reject) => {
         try {
           const req = new GetDetailInfoRequest();
           Vue.prototype.client.getDetailInfo(req, {}, (err, resp) => {
-            if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+            if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
               return;
             }
             resolve(resp.getInfo().toObject());
@@ -400,12 +426,13 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiGetCsrfToken = function() {
       return new Promise((resolve, reject) => {
         try {
           const req = new GetCsrfTokenRequest();
           Vue.prototype.client.getCsrfToken(req, {}, (err, resp) => {
-            if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+            if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
               return;
             }
             resolve(resp.getCsrfToken());
@@ -415,6 +442,7 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiUpdateDetailInfoRequest = function({
       nickName,
       phone,
@@ -445,7 +473,7 @@ export default {
                 req.setAvatar(avatar);
               }
               Vue.prototype.client.updateDetailInfo(req, {}, (err, resp) => {
-                if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+                if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
                   return;
                 }
                 resolve();
@@ -459,6 +487,7 @@ export default {
         }
       });
     };
+
     Vue.prototype.apiChangePassword = function(password, newPassword) {
       return new Promise((resolve, reject) => {
         try {
@@ -470,7 +499,7 @@ export default {
               req.setPassword(password);
               req.setNewPassword(newPassword);
               Vue.prototype.client.changePassword(req, {}, (err, resp) => {
-                if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+                if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
                   return;
                 }
                 resolve();
@@ -484,18 +513,21 @@ export default {
         }
       });
     };
+
     Vue.prototype.updateQueryStringParameter = function(uri, key, value) {
       if (!value) {
         return uri;
       }
-      var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
-      var separator = uri.indexOf("?") !== -1 ? "&" : "?";
+
+      const re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+      const separator = uri.indexOf("?") !== -1 ? "&" : "?";
       if (uri.match(re)) {
         return uri.replace(re, "$1" + key + "=" + value + "$2");
       } else {
         return uri + separator + key + "=" + value;
       }
     };
+
     Vue.prototype.apiGetUserList = function (offset, pageSize) {
       return new Promise((resolve, reject) => {
         try {
@@ -505,7 +537,7 @@ export default {
             req.setOffset(offset);
             req.setLimit(pageSize);
             Vue.prototype.client.getUserList(req, {}, (err, resp) => {
-              if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+              if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
                 return
               }
               resolve({ 'cnt': resp.getCnt(), 'users': resp.getUsersList()});
@@ -518,6 +550,7 @@ export default {
         }
       })
     };
+
     Vue.prototype.__managerUser = function (userID, mType, resetPasswordPayload) {
       return new Promise((resolve, reject) => {
         try {
@@ -530,7 +563,7 @@ export default {
               req.setResetPassword(resetPasswordPayload);
             }
             Vue.prototype.client.managerUser(req, {}, (err, resp) => {
-              if (!Vue.prototype.__checkGrpcResp(err, resp, reject)) {
+              if (!Vue.prototype.__checkGRPCResp(err, resp, reject)) {
                 return
               }
               resolve()
@@ -543,22 +576,27 @@ export default {
         }
       })
     };
+
     Vue.prototype.apiSetUserAdmin = function (userID) {
-      return Vue.prototype.__managerUser(userID, ManagerUserType.MUTSETADMINPRIVILEGE)
+      return Vue.prototype.__managerUser(userID, ManagerUserType.MANAGER_USER_TYPE_SET_ADMIN_PRIVILEGE)
     };
+
     Vue.prototype.apiUnsetUserAdmin = function (userID) {
-      return Vue.prototype.__managerUser(userID, ManagerUserType.MUTUNSETADMINPRIVILEGE)
+      return Vue.prototype.__managerUser(userID, ManagerUserType.MANAGER_USER_TYPE_UNSET_ADMIN_PRIVILEGE)
     };
+
     Vue.prototype.apiSwitchUserAdminPrivileges = function (userID) {
-      return Vue.prototype.__managerUser(userID, ManagerUserType.MUTSWITCHADMINPRIVILEGE)
+      return Vue.prototype.__managerUser(userID, ManagerUserType.MANAGER_USER_TYPE_SWITCH_ADMIN_PRIVILEGE)
     };
+
     Vue.prototype.apiDeleteUser = function (userID) {
-      return Vue.prototype.__managerUser(userID, ManagerUserType.MUTDELETE)
+      return Vue.prototype.__managerUser(userID, ManagerUserType.MANAGER_USER_TYPE_DELETE)
     };
+
     Vue.prototype.apiResetUserPassword = function (userID, newPassword) {
       const resetPasswordRequest = new ManagerUserResetPasswordRequest();
       resetPasswordRequest.setNewPassword(newPassword);
-      return Vue.prototype.__managerUser(userID, ManagerUserType.MUTRESETPASSWORD, resetPasswordRequest)
+      return Vue.prototype.__managerUser(userID, ManagerUserType.MANAGER_USER_TYPE_RESET_PASSWORD, resetPasswordRequest)
     };
   }
 };
