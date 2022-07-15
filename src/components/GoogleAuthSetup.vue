@@ -46,6 +46,7 @@ export default {
       new QRCode("qrcode", {
         width: 150,
         height: 150,
+        correctLevel: 3,
         text: this.privateKey
       });
     },
