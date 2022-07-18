@@ -45,10 +45,17 @@
             :label="$t('label.verify_code')"
             prop="codeForVe"
           >
-            <el-input
-              v-model="loginForm.codeForVe"
-              :placeholder="$t('hint.verify_code')"
-            ></el-input>
+            <el-col :xs="24" :sm="18">
+              <el-input
+                  v-model="loginForm.codeForVe"
+                  :placeholder="$t('hint.verify_code')"
+              ></el-input>
+            </el-col>
+            <el-col :xs="24" :sm="6">
+              <el-button plain style="width: 100%" @click="sendVerifyCode()">{{
+                  $t("label.send_verify_code")
+                }}</el-button>
+            </el-col>
           </el-form-item>
           <el-form-item
             v-if="needVerifyCodeForGa"
@@ -250,7 +257,29 @@ export default {
     },
     logout() {
       store.dispatch("Logout4SSO")
-    }
+    },
+    sendVerifyCode() {
+      if (this.loginForm.userName === "") {
+        this.$message({
+          message: this.$i18n.t("tips.username_is_null"),
+          type: "warning"
+        });
+        return;
+      }
+      this.apiSendVerifyCode(this.loginForm.userName)
+          .then(() => {
+            this.$message({
+              message: this.$t("tips.operation_success"),
+              type: "success"
+            });
+          })
+          .catch(err => {
+            this.$message({
+              message: err.toString(),
+              type: "error"
+            });
+          });
+    },
   }
 };
 </script>
